@@ -1,0 +1,13 @@
+{
+  "name": "Chaos Chess",
+  "short_name": "ChaosChess",
+  "description": "Chess meets Uno, dice, and chaos.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a12",
+  "theme_color": "#0a0a12",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

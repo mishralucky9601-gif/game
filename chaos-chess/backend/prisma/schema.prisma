@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Users ----------
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  isGuest      Boolean  @default(true)
+  email        String?  @unique
+  passwordHash String?
+  avatarUrl    String?
+  createdAt    DateTime @default(now())
+
+  elo          Int      @default(1200)
+  wins         Int      @default(0)
+  losses       Int      @default(0)
+  draws        Int      @default(0)
+  winStreak    Int      @default(0)
+  bestStreak   Int      @default(0)
+
+  roomsOwned   Room[]          @relation("RoomOwner")
+  matchesAsP1  Match[]         @relation("Player1")
+  matchesAsP2  Match[]         @relation("Player2")
+  moves        Move[]
+  achievements UserAchievement[]
+  leaderboard  LeaderboardEntry[]
+
+  @@index([elo])
+}
+
+// ---------- Rooms ----------
+model Room {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  ownerId   String
+  owner     User     @relation("RoomOwner", fields: [ownerId], references: [id])
+  isPrivate Boolean  @default(true)
+  maxPlayers Int     @default(2)
+  status    RoomStatus @default(WAITING)
+  createdAt DateTime @default(now())
+  match     Match?
+}
+
+enum RoomStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+  ABANDONED
+}
+
+// ---------- Matches ----------
+model Match {
+  id         String   @id @default(uuid())
+  roomId     String   @unique
+  room       Room     @relation(fields: [roomId], references: [id])
+
+  player1Id  String
+  player1    User     @relation("Player1", fields: [player1Id], references: [id])
+  player2Id  String?
+  player2    User?    @relation("Player2", fields: [player2Id], references: [id])
+
+  winnerId   String?
+  result     MatchResult @default(IN_PROGRESS)
+  finalFen   String?
+
+  startedAt  DateTime @default(now())
+  endedAt    DateTime?
+
+  moves      Move[]
+}
+
+enum MatchResult {
+  IN_PROGRESS
+  PLAYER1_WIN
+  PLAYER2_WIN
+  DRAW
+  ABANDONED
+}
+
+// ---------- Moves ----------
+model Move {
+  id        String   @id @default(uuid())
+  matchId   String
+  match     Match    @relation(fields: [matchId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  moveNumber Int
+  from       String?
+  to         String?
+  san        String?
+  type       MoveType @default(CHESS_MOVE)
+  payload    Json?
+  createdAt  DateTime @default(now())
+}
+
+enum MoveType {
+  CHESS_MOVE
+  CARD_PLAYED
+  DICE_ROLLED
+  CHAOS_EVENT
+}
+
+// ---------- Cards (catalog) ----------
+model Card {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  name        String
+  description String
+  type        String
+}
+
+// ---------- Leaderboard ----------
+model LeaderboardEntry {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  period    LeaderboardPeriod
+  score     Int
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, period])
+}
+
+enum LeaderboardPeriod {
+  DAILY
+  WEEKLY
+  GLOBAL
+}
+
+// ---------- Achievements ----------
+model Achievement {
+  id          String @id @default(uuid())
+  key         String @unique
+  name        String
+  description String
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  achievementId String
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  unlockedAt    DateTime @default(now())
+
+  @@unique([userId, achievementId])
+}

@@ -1,0 +1,13 @@
+{
+  "name": "chaos-chess",
+  "private": true,
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "dev": "concurrently -n backend,frontend -c blue,magenta \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "smoke-test": "npm run dev -w backend & sleep 4 && node backend/scripts/smoke-test-basic.js && node backend/scripts/smoke-test-cards-chaos.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
